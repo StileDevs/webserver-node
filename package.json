@@ -1,0 +1,26 @@
+{
+  "name": "webserver-node",
+  "version": "1.0.0",
+  "main": "src/app.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsup",
+    "test:node": "tsup && node test/run.js",
+    "test:bun": "tsup && bun run test/run.js"
+  },
+  "keywords": [],
+  "author": "JadlionHD <jadlion.dev@gmail.com>",
+  "license": "MIT",
+  "description": "",
+  "dependencies": {
+    "@hono/node-server": "^1.13.1",
+    "consola": "^3.2.3",
+    "growtopia.js": "latest",
+    "hono": "^4.6.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.5",
+    "tsup": "latest",
+    "typescript": "^5.6.2"
+  }
+}
