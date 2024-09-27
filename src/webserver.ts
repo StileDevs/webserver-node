@@ -1,10 +1,13 @@
 import { Hono } from "hono";
+import { logger as logg } from "hono/logger";
+import { serveStatic } from "@hono/node-server/serve-static";
 import { serve } from "@hono/node-server";
 import type { Logger } from "./core/logger";
 import { createServer } from "https";
 import { readFileSync } from "fs";
-import { dirname, join } from "path";
+import { dirname, join, relative } from "path";
 import { fileURLToPath } from "url";
+import { PlayerRoute } from "./routes/player";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const conf = JSON.parse(readFileSync(join(__dirname, "..", "config.json"), "utf-8"));
@@ -12,11 +15,20 @@ const conf = JSON.parse(readFileSync(join(__dirname, "..", "config.json"), "utf-
 function main(logger: Logger) {
   const app = new Hono();
 
-  app.get("/", (ctx) => {
-    return ctx.text("Hello Hono!");
-  });
+  app.use(logg((str, ...rest) => logger.log(str, ...rest)));
 
-  app.get("/growtopia/server_data.php", (ctx) => {
+  const from = join(__dirname, "..", "..", "..");
+  const to = join(__dirname, "..", ".cache", "website");
+  const root = relative(from, to);
+
+  app.use(
+    "/*",
+    serveStatic({
+      root
+    })
+  );
+
+  app.post("/growtopia/server_data.php", (ctx) => {
     let str = "";
 
     str += `server|${conf.address}\n`;
@@ -25,8 +37,11 @@ function main(logger: Logger) {
     str += `port|${randPort}\nloginurl|${conf.loginUrl}\ntype|1\n${
       conf.maintenance.enable ? "maint" : "#maint"
     }|${conf.maintenance.message}\nmeta|ignoremeta\nRTENDMARKERBS1001`;
-    return ctx.text(str);
+
+    return ctx.body(str);
   });
+
+  app.route("/player", PlayerRoute());
 
   serve(
     {
@@ -50,6 +65,23 @@ function main(logger: Logger) {
     },
     (info) => {
       logger.log(`Running HTTPS server on https://localhost`);
+    }
+  );
+
+  serve(
+    {
+      fetch: app.fetch,
+      port: 8080,
+      createServer,
+      serverOptions: {
+        key: readFileSync(
+          join(__dirname, "..", ".cache", "ssl", "_wildcard.growserver.app-key.pem")
+        ),
+        cert: readFileSync(join(__dirname, "..", ".cache", "ssl", "_wildcard.growserver.app.pem"))
+      }
+    },
+    (info) => {
+      logger.log(`Running Login server on https://localhost:8080`);
     }
   );
 }

@@ -4,6 +4,8 @@ import { main } from "./webserver.js";
 import { Logger } from "./core/logger.js";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+import { downloadMkcert, downloadWebsiteBuild } from "./download.js";
+import { setupMkcert } from "./utils.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -22,6 +24,9 @@ export class Plugin {
   async init() {
     try {
       this.logger.info(`Initialize ${this.pluginConf.name} v${this.pluginConf.version}`);
+      await downloadMkcert(this.logger);
+      await downloadWebsiteBuild(this.logger);
+      await setupMkcert(this.logger);
       main(this.logger);
       this.logger.success(`Loaded ${this.pluginConf.name} v${this.pluginConf.version}`);
     } catch (e: any) {

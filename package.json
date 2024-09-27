@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsup",
-    "test:node": "tsup && node test/run.js",
-    "test:bun": "tsup && bun run test/run.js"
+    "test": "tsup && (node test/run.js || (echo Failed to use nodejs, skiping to bunjs instead. && bun run test/run.js))"
   },
   "keywords": [],
   "author": "JadlionHD <jadlion.dev@gmail.com>",
@@ -15,10 +14,14 @@
   "dependencies": {
     "@hono/node-server": "^1.13.1",
     "consola": "^3.2.3",
+    "decompress": "^4.2.1",
     "growtopia.js": "latest",
-    "hono": "^4.6.3"
+    "hono": "^4.6.3",
+    "undici": "^6.19.8",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/decompress": "^4.2.7",
     "@types/node": "^22.5.5",
     "tsup": "latest",
     "typescript": "^5.6.2"

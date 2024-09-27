@@ -5,9 +5,6 @@ import { Client } from "growtopia.js";
 const client = new Client({
   enet: {
     ip: "0.0.0.0"
-  },
-  https: {
-    enable: false
   }
 });
 
@@ -19,19 +16,24 @@ client.on("ready", async () => {
     `ENet server: port ${client.config.enet?.port} on ${client.config.enet?.ip} and Https server: port ${client.config.https?.httpsPort} on ${client.config.https?.ip}`
   );
 
-  try {
-    const { Plugin } = await import(`../dist/src/app.js`);
-    const plugin = new Plugin();
+  const pluginDir = await fs.readdir("./dist");
 
-    plugin.init(client);
+  pluginDir.forEach(async (dir) => {
+    const pluginNameDir = await fs.readdir(`./dist/${dir}`);
 
-    consola.info(`Loaded test plugin`);
+    try {
+      const { Plugin } = await import(`../dist/${dir}/src/app.js`);
+      const plugin = new Plugin(client);
 
-    loadedPlugins.push(plugin);
-  } catch (e) {
-    consola.error(`Oh no, something wrong when load plugin`, e);
-    process.exit(1);
-  }
+      await plugin.init();
+
+      loadedPlugins.push(plugin);
+      consola.success(`Loaded ${loadedPlugins.length} plugin`);
+    } catch (e) {
+      consola.error(`Oh no, something wrong when load plugin ${dir}`, e);
+      process.exit(1);
+    }
+  });
 });
 
 client.on("error", (err) => {

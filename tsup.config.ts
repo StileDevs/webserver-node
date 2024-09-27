@@ -1,7 +1,11 @@
+import { readFileSync } from "fs";
 import { defineConfig, type Options } from "tsup";
 
+const packagePlugin = JSON.parse(readFileSync("./package.json", "utf-8"));
+
 let config: Options = {
-  entry: ["src/**/*", "package.json", "config.json", "resources/**/*"],
+  entry: ["src/app.ts", "package.json", "config.json", "resources/**/*"],
+  outDir: `dist/${packagePlugin.name}`,
   splitting: false,
   sourcemap: false,
   bundle: true,
@@ -14,7 +18,14 @@ let config: Options = {
     ".crt": "copy",
     ".pem": "copy",
     ".rttex": "copy",
-    ".json": "copy"
+    ".json": "copy",
+    ".html": "copy",
+    ".css": "copy",
+    ".js": "copy",
+    ".svg": "copy",
+    ".png": "copy",
+    ".jpg": "copy",
+    ".jpeg": "copy"
   }
 };
 

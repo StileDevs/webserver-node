@@ -23,7 +23,7 @@ export class Logger {
   public warn(msg: string, ...args: any[]) {
     consola.warn(msg ? `${this.logPluginName} ${msg}` : this.logPluginName, ...args);
   }
-  public error(err: Error, ...args: any[]) {
+  public error(err: string, ...args: any[]) {
     consola.error(err, ...args);
   }
 }
