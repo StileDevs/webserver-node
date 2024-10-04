@@ -12,10 +12,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 export class Plugin {
   public pluginConf: any;
   public logger: Logger;
+  public requiredPlugins = ["webserver-node"];
+  public plugins: Map<string, any>;
 
   constructor(public client: Client) {
     this.pluginConf = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf-8"));
     this.logger = new Logger(this.pluginConf);
+    this.plugins = new Map();
   }
 
   /**
@@ -23,15 +26,20 @@ export class Plugin {
    */
   async init() {
     try {
-      this.logger.info(`Initialize ${this.pluginConf.name} v${this.pluginConf.version}`);
       await downloadMkcert(this.logger);
       await downloadWebsiteBuild(this.logger);
       await setupMkcert(this.logger);
       main(this.logger);
-      this.logger.success(`Loaded ${this.pluginConf.name} v${this.pluginConf.version}`);
     } catch (e: any) {
       this.logger.error(e);
     }
+  }
+
+  /**
+   * Set a bunch of loaded plugins. This meant for API purposes with other plugin.
+   */
+  setPlugin(name: string, plugin: any) {
+    this.plugins.set(name, plugin);
   }
 
   /**

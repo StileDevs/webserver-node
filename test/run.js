@@ -5,39 +5,62 @@ import { Client } from "growtopia.js";
 const client = new Client({
   enet: {
     ip: "0.0.0.0"
+  },
+  https: {
+    enable: false
   }
 });
 
-/** @type {import("../types").Plugin[]} */
-const loadedPlugins = [];
+/** @type {Map<string, import("../src/app").Plugin>} */
+const loadedPlugins = new Map();
 
 client.on("ready", async () => {
-  consola.info(
-    `ENet server: port ${client.config.enet?.port} on ${client.config.enet?.ip} and Https server: port ${client.config.https?.httpsPort} on ${client.config.https?.ip}`
-  );
+  consola.box("GrowServer");
+  consola.info(`[server] - Starting ENet server port: ${client.config.enet?.port}`);
 
   const pluginDir = await fs.readdir("./dist");
 
-  pluginDir.forEach(async (dir) => {
-    const pluginNameDir = await fs.readdir(`./dist/${dir}`);
+  // Load every plugins that inside plugins directory
+  await new Promise((res, rej) => {
+    pluginDir.forEach(async (dir) => {
+      try {
+        const { Plugin } = await import(`../dist/${dir}/src/app.js`);
+        /** @type {import("../src/app").Plugin} */
+        const plugin = new Plugin(client);
 
-    try {
-      const { Plugin } = await import(`../dist/${dir}/src/app.js`);
-      const plugin = new Plugin(client);
+        consola.info(
+          `[server] - Initialize ${plugin.pluginConf.name} v${plugin.pluginConf.version}`
+        );
+        await plugin.init();
+        consola.ready(`[server] - Loaded ${plugin.pluginConf.name} v${plugin.pluginConf.version}`);
 
-      await plugin.init();
-
-      loadedPlugins.push(plugin);
-      consola.success(`Loaded ${loadedPlugins.length} plugin`);
-    } catch (e) {
-      consola.error(`Oh no, something wrong when load plugin ${dir}`, e);
-      process.exit(1);
-    }
+        loadedPlugins.set(dir, plugin);
+      } catch (e) {
+        consola.error(`[server] - Oh no, something wrong when load plugin ${dir}`, e);
+        rej(e);
+      }
+      res(true);
+    });
   });
+
+  // Give API access for the Plugins
+  loadedPlugins.forEach((p) => {
+    if (!p.requiredPlugins.length) return;
+
+    p.requiredPlugins.forEach((pluginName) => {
+      if (p.pluginConf.name === pluginName) return;
+
+      if (loadedPlugins.has(pluginName)) {
+        p.setPlugin(pluginName, loadedPlugins.get(pluginName));
+      }
+    });
+  });
+
+  consola.success(`[server] - Loaded ${loadedPlugins.size} plugins`);
 });
 
 client.on("error", (err) => {
-  consola.error("Something wrong with growserver", err);
+  consola.error("[server] - Something wrong with growserver", err);
 });
 
 client.on("connect", (netID) => loadedPlugins.forEach((v) => v.onConnect(netID)));
